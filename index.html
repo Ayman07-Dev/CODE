@@ -217,33 +217,15 @@
                             <h1 class="text-2xl font-bold text-gray-900">Student Projects</h1>
                             <p class="text-gray-500">Collaborate on ongoing projects or showcase yours.</p>
                         </div>
+                         <button onclick="toggleModal('project-modal')"
+          class="bg-brand text-white px-4 py-2 rounded-xl font-semibold hover:bg-brandDark transition">
+    + Launch Project
+  </button>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden hover-card transition group">
-                            <div class="h-32 bg-gradient-to-r from-blue-500 to-cyan-400 relative">
-                                <span class="absolute top-4 right-4 bg-white/90 px-2 py-1 rounded text-xs font-bold text-blue-600">Looking for Devs</span>
-                            </div>
-                            <div class="p-6">
-                                <h3 class="font-bold text-lg mb-2 group-hover:text-brand transition">AI Note Taker</h3>
-                                <p class="text-sm text-gray-500 mb-4">Building a chrome extension that summarizes lecture videos using OpenAI API.</p>
-                                <div class="flex -space-x-2 mb-4">
-                                    <div class="w-8 h-8 rounded-full bg-gray-200 border-2 border-white"></div>
-                                    <div class="w-8 h-8 rounded-full bg-gray-300 border-2 border-white"></div>
-                                </div>
-                                <button onclick="openDM('ProjectOwner1')" class="w-full py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition">Request to Join</button>
-                            </div>
+                        <div id="projects-container"
+                            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         </div>
-                        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden hover-card transition group">
-                            <div class="h-32 bg-gradient-to-r from-purple-500 to-pink-500 relative">
-                                <span class="absolute top-4 right-4 bg-white/90 px-2 py-1 rounded text-xs font-bold text-purple-600">Beta Testing</span>
-                            </div>
-                            <div class="p-6">
-                                <h3 class="font-bold text-lg mb-2 group-hover:text-brand transition">Campus Marketplace</h3>
-                                <p class="text-sm text-gray-500 mb-4">An app to buy/sell old books and electronics within the campus safely.</p>
-                                <button onclick="openDM('ProjectOwner2')" class="w-full py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition">Message Team</button>
-                            </div>
-                        </div>
-                    </div>
+
                 </div>
             </div>
 
@@ -371,6 +353,36 @@
     window.location.href = "index.html";
   });
 }
+function postProject() {
+  const title = document.getElementById("proj-title").value;
+  const desc = document.getElementById("proj-desc").value;
+  const tags = document.getElementById("proj-tags").value;
+  const author = localStorage.getItem("sx_user");
+
+  if (!author || author === "Guest") {
+    alert("Please log in to publish a project.");
+    return;
+  }
+
+  if (!title || !desc) {
+    alert("Please fill all required fields.");
+    return;
+  }
+
+  db.collection("projects").add({
+    title,
+    description: desc,
+    techStack: tags,
+    author,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  toggleModal("project-modal");
+
+  document.getElementById("proj-title").value = "";
+  document.getElementById("proj-desc").value = "";
+  document.getElementById("proj-tags").value = "";
+}
 
 
         // 1. FIREBASE CONFIG 
@@ -393,6 +405,7 @@
         if(firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY_HERE") {
             firebase.initializeApp(firebaseConfig);
             db = firebase.firestore();
+            loadProjects();
 
             // --- NEW AUTH LOGIC ---
 const auth = firebase.auth();
@@ -583,6 +596,44 @@ const heartIcon = hasLiked
         } else {
             alert("Please paste your Firebase API Key in the code!");
         }
+function loadProjects() {
+  const container = document.getElementById("projects-container");
+  if (!container) return;
+
+  db.collection("projects")
+    .orderBy("timestamp", "desc")
+    .onSnapshot(snapshot => {
+      container.innerHTML = "";
+
+      if (snapshot.empty) {
+        container.innerHTML = `
+          <p class="text-gray-400 col-span-full text-center">
+            No projects posted yet.
+          </p>`;
+        return;
+      }
+
+      snapshot.forEach(doc => {
+        const p = doc.data();
+
+        container.innerHTML += `
+          <div class="bg-white rounded-xl border border-gray-200 overflow-hidden hover-card transition">
+            <div class="h-32 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+            <div class="p-6">
+              <h3 class="font-bold text-lg mb-2">${p.title}</h3>
+              <p class="text-sm text-gray-500 mb-3">${p.description}</p>
+              <p class="text-xs text-gray-400 mb-4">
+                Tech: ${p.tech || "Not specified"}
+              </p>
+              <p class="text-xs font-semibold text-gray-600">
+                By ${p.author}
+              </p>
+            </div>
+          </div>
+        `;
+      });
+    });
+}
 
         // 3. PAGE SWITCHER
         function switchPage(pageId, btnElement) {
@@ -721,6 +772,37 @@ const heartIcon = hasLiked
     document.getElementById('qa-title').value = "";
   }
 }
+function postProject() {
+  const title = document.getElementById("proj-title").value.trim();
+  const desc = document.getElementById("proj-desc").value.trim();
+  const tech = document.getElementById("proj-tags").value.trim();
+  const author = localStorage.getItem("sx_user");
+
+  if (!author || author === "Guest") {
+    alert("Please log in to post a project.");
+    return;
+  }
+
+  if (!title || !desc) {
+    alert("Title and description are required.");
+    return;
+  }
+
+  db.collection("projects").add({
+    title,
+    description: desc,
+    tech,
+    author,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  toggleModal("project-modal");
+
+  document.getElementById("proj-title").value = "";
+  document.getElementById("proj-desc").value = "";
+  document.getElementById("proj-tags").value = "";
+}
+
 
 
         // --- GITHUB API INTEGRATION ---
@@ -743,7 +825,16 @@ const heartIcon = hasLiked
 
             try {
                 // Fetch repos for the specific targetUser
-                const response = await fetch(`https://api.github.com/users/${targetUser}/repos?sort=updated&per_page=4`);
+                const response = await fetch(
+  `https://api.github.com/users/${targetUser}/repos?sort=updated&per_page=4`,
+  {
+    headers: {
+      "Accept": "application/vnd.github+json",
+      "User-Agent": "SkillXchange-App"
+    }
+  }
+);
+
                 
                 if (!response.ok) throw new Error('User not found');
                 
@@ -789,5 +880,33 @@ const heartIcon = hasLiked
             }
         }
     </script>
+    <div id="project-modal" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg transform transition-all">
+        <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+            <h3 class="text-xl font-bold text-gray-800">Launch Project</h3>
+            <button onclick="toggleModal('project-modal')" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="p-6 space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Project Name</label>
+                <input id="proj-title" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-brand outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Description</label>
+                <textarea id="proj-desc" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 h-24 resize-none focus:ring-2 focus:ring-brand outline-none"></textarea>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tech Stack</label>
+                <input id="proj-tags" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-brand outline-none">
+            </div>
+            <button onclick="postProject()" class="w-full bg-brand text-white font-bold py-3 rounded-xl hover:bg-brandDark transition shadow-lg mt-2">
+                Publish Project
+            </button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
