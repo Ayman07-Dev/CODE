@@ -648,20 +648,31 @@ function loadProjects() {
         const p = doc.data();
 
         container.innerHTML += `
-          <div class="bg-white rounded-xl border border-gray-200 overflow-hidden hover-card transition">
-            <div class="h-32 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
-            <div class="p-6">
-              <h3 class="font-bold text-lg mb-2">${p.title}</h3>
-              <p class="text-sm text-gray-500 mb-3">${p.description}</p>
-              <p class="text-xs text-gray-400 mb-4">
-                Tech: ${p.techStack || p.tech || "Not specified"}
-              </p>
-              <p class="text-xs font-semibold text-gray-600">
-                By ${p.author}
-              </p>
-            </div>
-          </div>
-        `;
+  <div class="bg-white rounded-xl border border-gray-200 overflow-hidden hover-card transition">
+    <div class="h-32 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+
+    <div class="p-6">
+      <h3 class="font-bold text-lg mb-2">${p.title}</h3>
+      <p class="text-sm text-gray-500 mb-3">${p.description}</p>
+
+      <p class="text-xs text-gray-400 mb-3">
+        Tech: ${p.techStack || p.tech || "Not specified"}
+      </p>
+
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold text-gray-600">
+          By ${p.author}
+        </span>
+
+        <button
+          onclick="messageProjectAuthor('${p.author}')"
+          class="text-xs px-3 py-1.5 rounded-lg bg-brandLight text-brand font-semibold hover:bg-brand hover:text-white transition">
+          Message
+        </button>
+      </div>
+    </div>
+  </div>
+`;
       });
     });
 }
@@ -752,6 +763,22 @@ function editProject(id, title, desc, tech) {
   document.getElementById("proj-tags").value = tech;
 
   toggleModal("project-modal");
+}
+function messageProjectAuthor(author) {
+  const currentUser = localStorage.getItem("sx_user");
+
+  if (!currentUser || currentUser === "Guest") {
+    alert("Please log in to message users.");
+    return;
+  }
+
+  if (author === currentUser) {
+    alert("You cannot message yourself.");
+    return;
+  }
+
+  // 🔥 THIS DOES EVERYTHING
+  openDM(author);
 }
 
 
