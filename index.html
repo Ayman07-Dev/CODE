@@ -74,6 +74,12 @@
                     <i class="fas fa-comments w-6 text-center mr-2"></i> Messages
                     <span class="ml-auto bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full hidden" id="msg-badge"></span>
                 </div>
+                <div onclick="filterMyPosts()"
+     class="sidebar-link flex items-center px-3 py-2.5 cursor-pointer text-sm text-gray-600">
+  <i class="fas fa-pencil-alt w-6 text-center mr-2"></i>
+  My Posts
+</div>
+
             </nav>
         </div>
 
@@ -146,7 +152,6 @@
                             </div>
                             <div class="text-center px-4 pb-4 pt-2 border-b border-gray-200">
                                 <h3 class="font-bold text-gray-900 text-sm hover:underline cursor-pointer" id="card-user-name">Guest</h3>
-                                <p class="text-xs text-gray-500 mt-1" id="card-user-bio">Computer Science Student • 3rd Year</p>
                             </div>
                             <div class="py-3">
                                 <div class="px-4 py-1 hover:bg-gray-100 cursor-pointer flex justify-between items-center">
@@ -158,17 +163,12 @@
                                     <div class="text-xs text-blue-600 font-bold">120</div>
                                 </div>
                             </div>
-                            <div class="border-t border-gray-200 px-4 py-3 hover:bg-gray-100 cursor-pointer">
-                                <div class="text-xs text-gray-500">Access exclusive tools</div>
-                                <div class="flex items-center gap-1 mt-0.5">
-                                    <div class="w-3 h-3 bg-yellow-600 rounded-[2px]"></div>
-                                    <span class="text-xs font-bold text-gray-900 underline decoration-1">Try Premium for ₹0</span>
-                                </div>
-                            </div>
-                            <div class="border-t border-gray-200 px-4 py-3 hover:bg-gray-100 cursor-pointer flex items-center gap-2">
-                                <i class="fas fa-bookmark text-gray-500 text-xs"></i>
-                                <span class="text-xs font-bold text-gray-900">My Items</span>
-                            </div>
+                            <div onclick="filterMyPosts()"
+     class="border-t border-gray-200 px-4 py-3 hover:bg-gray-100 cursor-pointer flex items-center gap-2">
+  <i class="fas fa-pencil-alt text-gray-500 text-xs"></i>
+  <span class="text-xs font-bold text-gray-900">My Posts</span>
+</div>
+
                         </div>
 
                         <div class="bg-white rounded-lg border border-gray-300 shadow-sm overflow-hidden sticky top-4 mt-3">
@@ -452,6 +452,58 @@ auth.onAuthStateChanged(async (user) => {
     `;
   }
 });
+function filterMyPosts() {
+  const currentUser = localStorage.getItem("sx_user");
+  if (!currentUser) return;
+
+  const myPosts = allPosts.filter(post => post.author === currentUser);
+  renderFeed(myPosts);
+}
+function toggleLike(postId) {
+  const currentUser = localStorage.getItem("sx_user");
+
+  if (!currentUser || currentUser === "Guest") {
+    alert("Please log in to like posts.");
+    return;
+  }
+
+  const post = allPosts.find(p => p.id === postId);
+  if (!post) return;
+
+  if (!post.likedBy) post.likedBy = {};
+
+  const ref = db.collection("questions").doc(postId);
+
+  // 🔹 CASE 1: UNLIKE
+  if (post.likedBy[currentUser]) {
+    // Optimistic UI
+    delete post.likedBy[currentUser];
+    post.likes = Math.max((post.likes || 1) - 1, 0);
+    renderFeed(allPosts);
+
+    // Firestore sync
+    ref.update({
+      [`likedBy.${currentUser}`]: firebase.firestore.FieldValue.delete(),
+      likes: firebase.firestore.FieldValue.increment(-1)
+    });
+
+    return;
+  }
+
+  // 🔹 CASE 2: LIKE
+  post.likedBy[currentUser] = true;
+  post.likes = (post.likes || 0) + 1;
+  renderFeed(allPosts);
+
+  ref.update({
+    [`likedBy.${currentUser}`]: true,
+    likes: firebase.firestore.FieldValue.increment(1)
+  });
+}
+
+
+
+
 
 
             // EXPLORE LOGIC
@@ -459,7 +511,7 @@ auth.onAuthStateChanged(async (user) => {
             db.collection("questions").orderBy("timestamp", "desc").onSnapshot(snap => {
                 allPosts = []; 
                 snap.forEach(doc => {
-                    allPosts.push(doc.data()); 
+                    allPosts.push({ id: doc.id, ...doc.data() });
                 });
                 renderFeed(allPosts); 
             });
@@ -474,6 +526,13 @@ auth.onAuthStateChanged(async (user) => {
                 }
 
                 postsToRender.forEach(data => {
+                    const currentUser = localStorage.getItem("sx_user");
+const hasLiked = data.likedBy && data.likedBy[currentUser];
+
+const heartIcon = hasLiked
+  ? '<i class="fas fa-heart text-red-500"></i>'
+  : '<i class="far fa-heart"></i>';
+
                     let tagColor = "bg-gray-100 text-gray-600";
                     if(data.tag === "Help Needed") tagColor = "bg-red-50 text-red-600";
                     if(data.tag === "Offering Skill") tagColor = "bg-green-50 text-green-600";
@@ -497,7 +556,14 @@ auth.onAuthStateChanged(async (user) => {
                                 <button onclick="openDM('${data.author}')" class="flex items-center space-x-2 text-brand font-medium hover:text-brandDark transition px-2 py-1 rounded hover:bg-brandLight">
                                     <i class="far fa-comment-alt"></i> <span>Message</span>
                                 </button>
-                                <button class="flex items-center space-x-2 hover:text-gray-800 transition px-2 py-1"><i class="far fa-heart"></i> <span>Like</span></button>
+                                <button onclick="toggleLike('${data.id}')"
+        class="flex items-center space-x-2 px-2 py-1 transition
+               ${hasLiked ? 'text-red-500' : 'hover:text-red-500'}">
+  ${heartIcon}
+  <span>${data.likes || 0}</span>
+</button>
+
+
                             </div>
                         </div>
                     `;
@@ -632,16 +698,30 @@ auth.onAuthStateChanged(async (user) => {
         }
 
         function postQuestion() {
-            const title = document.getElementById('qa-title').value;
-            const tag = document.getElementById('qa-tag').value;
-            if(title) {
-                db.collection("questions").add({
-                    title: title, tag: tag, author: localStorage.getItem('sx_user'), timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                toggleModal('qa-modal');
-                document.getElementById('qa-title').value = "";
-            }
-        }
+  const title = document.getElementById('qa-title').value;
+  const tag = document.getElementById('qa-tag').value;
+  const author = localStorage.getItem("sx_user");
+
+  if (!author || author === "Guest") {
+    alert("Please log in to post.");
+    return;
+  }
+
+  if (title) {
+    db.collection("questions").add({
+      title: title,
+      tag: tag,
+      author: author,
+      likes: 0,
+      likedBy: {},
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    toggleModal('qa-modal');
+    document.getElementById('qa-title').value = "";
+  }
+}
+
 
         // --- GITHUB API INTEGRATION ---
         const githubUsername = "google"; // <--- CHANGE THIS TO YOUR GITHUB USERNAME
