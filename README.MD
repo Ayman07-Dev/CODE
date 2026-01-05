@@ -84,6 +84,15 @@ SkillXchange is a hackathon project showcasing a functional prototype with real-
 
 ---
 
+## Project Structure
+
+- Each page is implemented as a standalone HTML file
+- Firebase logic is embedded directly for simplicity
+- Tailwind CDN is used to avoid build tools
+- Structure chosen to prioritize speed and clarity during hackathon
+
+---
+
 ## 📄 License
 
 This project is open-source and licensed under the MIT License.
