@@ -320,13 +320,13 @@
                         </div>
                         <div class="flex-1 overflow-y-auto p-2 space-y-4">
                             <div>
-                                <h4 class="px-2 text-xs font-bold text-gray-400 uppercase mb-2 mt-2">Channels</h4>
+                                <h4 class="px-2 text-xs font-bold text-gray-400 uppercase mb-2 mt-2">Groups</h4>
                                 <div class="space-y-1">
                                     <div onclick="switchRoom('general', 'General Chat')" id="room-general" class="chat-room-item active flex items-center px-3 py-2 text-sm text-gray-600">
-                                        <i class="fas fa-hashtag w-4 text-gray-400 mr-2"></i> general
+                                        <i class="fas fa-hashtag w-4 text-gray-400 mr-2"></i> General
                                     </div>
-                                    <div onclick="switchRoom('projects', 'Project Help')" id="room-projects" class="chat-room-item flex items-center px-3 py-2 text-sm text-gray-600">
-                                        <i class="fas fa-hashtag w-4 text-gray-400 mr-2"></i> projects
+                                    <div onclick="switchRoom('projects', 'ONLY STUDENTS GROUP')" id="room-projects" class="chat-room-item flex items-center px-3 py-2 text-sm text-gray-600">
+                                        <i class="fas fa-hashtag w-4 text-gray-400 mr-2"></i> Vrians
                                     </div>
                                 </div>
                             </div>
@@ -1130,7 +1130,7 @@ function loadChatMessages() {
   if (!box) return;
 
   if (unsubscribeChat) unsubscribeChat();
-  box.innerHTML = ""; // clear only when switching room
+  box.innerHTML = "";
 
   unsubscribeChat = db.collection("messages")
     .where("roomId", "==", currentRoomId)
@@ -1139,25 +1139,36 @@ function loadChatMessages() {
       snapshot.docChanges().forEach(change => {
         if (change.type === "added") {
           const data = change.doc.data();
-          const isMe = data.user === localStorage.getItem("sx_user");
+          const currentUser = localStorage.getItem("sx_user");
+          const isMe = data.user === currentUser;
 
-          const msgDiv = document.createElement("div");
-          msgDiv.className = `flex ${isMe ? "justify-end" : "justify-start"} mb-2`;
+          const msgWrapper = document.createElement("div");
+          msgWrapper.className = `flex flex-col ${
+            isMe ? "items-end" : "items-start"
+          } mb-3`;
 
-          msgDiv.innerHTML = `
+          msgWrapper.innerHTML = `
+            <span class="text-xs text-gray-400 mb-1 ${
+              isMe ? "mr-2" : "ml-2"
+            }">
+              ${isMe ? "You" : data.user}
+            </span>
+
             <div class="max-w-xs px-4 py-2 rounded-2xl text-sm shadow
-              ${isMe ? "bg-brand text-white" : "bg-white border"}">
+              ${isMe
+                ? "bg-brand text-white rounded-br-sm"
+                : "bg-white border rounded-bl-sm"}">
               ${data.text}
             </div>
           `;
 
-          box.appendChild(msgDiv);
+          box.appendChild(msgWrapper);
           box.scrollTop = box.scrollHeight;
         }
       });
-
     });
 }
+
 
         function sendChat() {
             const input = document.getElementById("chat-input");
