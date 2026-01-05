@@ -404,9 +404,10 @@
         function logout() {
   firebase.auth().signOut().then(() => {
     localStorage.clear();
-    window.location.href = "index.html";
+    window.location.href = "home.html"; // ✅ redirect to home.html
   });
 }
+
 function postProject() {
   const title = document.getElementById("proj-title").value;
   const desc = document.getElementById("proj-desc").value;
