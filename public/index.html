@@ -381,35 +381,52 @@ if (savedTheme === 'dark') {
         }
 
         function postProject() {
-          const title = document.getElementById("proj-title").value;
-          const desc = document.getElementById("proj-desc").value;
-          const tags = document.getElementById("proj-tags").value;
-          const author = localStorage.getItem("sx_user");
+  const title = document.getElementById("proj-title").value.trim();
+  const desc = document.getElementById("proj-desc").value.trim();
+  const tech = document.getElementById("proj-tags").value.trim();
+  // NEW: Get the GitHub link
+  const github = document.getElementById("proj-github").value.trim();
+  
+  const author = localStorage.getItem("sx_user");
 
-          if (!author || author === "Guest") {
-            alert("Please log in to publish a project.");
-            return;
-          }
+  if (!author || author === "Guest") {
+    alert("Please log in to post a project.");
+    return;
+  }
+  if (!title || !desc) {
+    alert("Title and description are required.");
+    return;
+  }
 
-          if (!title || !desc) {
-            alert("Please fill all required fields.");
-            return;
-          }
+  const data = {
+    title,
+    description: desc,
+    techStack: tech,
+    githubLink: github, // NEW: Save the link to Firestore
+    author,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  };
 
-          db.collection("projects").add({
-            title,
-            description: desc,
-            techStack: tags,
-            author,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-          });
+  if (editingProjectId) {
+    db.collection("projects").doc(editingProjectId).update(data).then(() => {
+        editingProjectId = null;
+        toggleModal("project-modal");
+        loadMyProjects();
+    });
+    return;
+  }
 
-          toggleModal("project-modal");
+  db.collection("projects").add(data).then(() => {
+    toggleModal("project-modal");
+    loadMyProjects();
+  });
 
-          document.getElementById("proj-title").value = "";
-          document.getElementById("proj-desc").value = "";
-          document.getElementById("proj-tags").value = "";
-        }
+  // Clear inputs
+  document.getElementById("proj-title").value = "";
+  document.getElementById("proj-desc").value = "";
+  document.getElementById("proj-tags").value = "";
+  document.getElementById("proj-github").value = ""; // NEW: Clear GitHub field
+}
 
         const firebaseConfig = {
             apiKey: "AIzaSyCLafxMmbSanvmgP9KPvWXO7968BgkSMAQ",
@@ -618,13 +635,13 @@ if (savedTheme === 'dark') {
                   <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover-card transition">
                     <div class="h-32 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
                     <div class="p-6">
-                      <h3 class="font-bold text-lg mb-2 text-gray-900 dark:text-white">${p.title}</h3>
+                      <h3 onclick="window.location.href='project.html?id=${p.id}'" class="font-bold text-lg mb-2 text-gray-900 dark:text-white cursor-pointer hover:text-brand transition">${p.title}</h3>
                       <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">${p.description}</p>
                       <p class="text-xs text-gray-400 mb-3">Tech: ${p.techStack || p.tech || "Not specified"}</p>
                       <div class="flex items-center justify-between">
                         <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">By ${p.author}</span>
                         <div class="flex gap-2">
-                          <button onclick="viewProjectDetails('${doc.id}')" class="text-xs px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition">More Details</button>
+                          <button onclick="window.location.href='project.html?id=${doc.id}'" class="text-xs px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition">View Project</button>
                           <button onclick="messageProjectAuthor('${p.author}')" class="text-xs px-3 py-1.5 rounded-lg bg-brandLight dark:bg-gray-700 text-brand font-semibold hover:bg-brand hover:text-white transition">Message</button>
                         </div>
                       </div>
@@ -659,7 +676,7 @@ if (savedTheme === 'dark') {
                   <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover-card transition">
                     <div class="h-32 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
                     <div class="p-6">
-                      <h3 class="font-bold text-lg mb-2 text-gray-900 dark:text-white">${p.title}</h3>
+                      <h3 onclick="window.location.href='project.html?id=${p.id}'" class="font-bold text-lg mb-2 text-gray-900 dark:text-white cursor-pointer hover:text-brand transition">${p.title}</h3>
                       <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">${p.description}</p>
                       <p class="text-xs text-gray-400 mb-4">Tech: ${p.techStack || p.tech || "Not specified"}</p>
                       <div class="flex gap-3">
@@ -988,42 +1005,7 @@ if (savedTheme === 'dark') {
           document.getElementById('qa-title').value = "";
         }
 
-        function postProject() {
-          const title = document.getElementById("proj-title").value.trim();
-          const desc = document.getElementById("proj-desc").value.trim();
-          const tech = document.getElementById("proj-tags").value.trim();
-          const author = localStorage.getItem("sx_user");
-          if (!author || author === "Guest") {
-            alert("Please log in to post a project.");
-            return;
-          }
-          if (!title || !desc) {
-            alert("Title and description are required.");
-            return;
-          }
-          const data = {
-            title,
-            description: desc,
-            techStack: tech,
-            author,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-          };
-          if (editingProjectId) {
-            db.collection("projects").doc(editingProjectId).update(data).then(() => {
-                editingProjectId = null;
-                toggleModal("project-modal");
-                loadMyProjects();
-              });
-            return;
-          }
-          db.collection("projects").add(data).then(() => {
-            toggleModal("project-modal");
-            loadMyProjects();
-          });
-          document.getElementById("proj-title").value = "";
-          document.getElementById("proj-desc").value = "";
-          document.getElementById("proj-tags").value = "";
-        }
+      
         function openUserProfile(userId) {
           window.location.href = `profile.html?uid=${userId}`;
         }
@@ -1147,6 +1129,10 @@ if (savedTheme === 'dark') {
                     <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Description</label>
                     <textarea id="proj-desc" class="w-full bg-gray-50 dark:bg-gray-700 dark:text-white border border-gray-200 dark:border-gray-600 rounded-xl p-3 h-24 resize-none focus:ring-2 focus:ring-brand outline-none"></textarea>
                 </div>
+                <div>
+    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">GitHub Repository Link</label>
+    <input id="proj-github" placeholder="e.g. https://github.com/username/repo" class="w-full bg-gray-50 dark:bg-gray-700 dark:text-white border border-gray-200 dark:border-gray-600 rounded-xl p-3 focus:ring-2 focus:ring-brand outline-none">
+</div>
                 <div>
                     <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tech Stack</label>
                     <input id="proj-tags" class="w-full bg-gray-50 dark:bg-gray-700 dark:text-white border border-gray-200 dark:border-gray-600 rounded-xl p-3 focus:ring-2 focus:ring-brand outline-none">
