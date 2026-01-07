@@ -1010,35 +1010,45 @@ if (savedTheme === 'dark') {
           window.location.href = `profile.html?uid=${userId}`;
         }
         function loadSeniorProfiles() {
-          const container = document.getElementById("seniors-container");
-          if (!container) return;
-          container.innerHTML = "";
-          db.collection("users").get().then(snapshot => {
-              if (snapshot.empty) {
-                container.innerHTML = `<p class="text-gray-400 text-center col-span-full">No users found.</p>`;
-                return;
-              }
-              snapshot.forEach(doc => {
-                const user = doc.data();
-                const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
-                const initial = fullName.charAt(0).toUpperCase();
-                container.innerHTML += `
-                  <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 hover-card transition text-center">
-                    <div onclick="openUserProfile('${doc.id}')" class="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center bg-brand text-white text-2xl font-bold cursor-pointer hover:opacity-90">
-                      ${initial || "U"}
-                    </div>
-                    <h3 class="font-bold text-lg text-gray-900 dark:text-white">${fullName || "Unnamed User"}</h3>
-                    <p class="text-xs text-gray-500 mt-1">${user.university || "University not specified"}</p>
-                    <p class="text-sm text-gray-500 mt-2 mb-4">${user.role || "Student"}</p>
-                    <button onclick="openDM('${fullName}')" class="w-full bg-brand text-white py-2 rounded-lg text-sm font-bold hover:bg-brandDark transition">Connect</button>
-                  </div>
-                `;
-              });
-            }).catch(err => {
-              console.error(err);
-              container.innerHTML = `<p class="text-red-500 text-center col-span-full">Failed to load users.</p>`;
-            });
-        }
+  const container = document.getElementById("seniors-container");
+  if (!container) return;
+  container.innerHTML = "";
+  
+  db.collection("users").get().then(snapshot => {
+      if (snapshot.empty) {
+        container.innerHTML = `<p class="text-gray-400 text-center col-span-full">No users found.</p>`;
+        return;
+      }
+      snapshot.forEach(doc => {
+        const user = doc.data();
+        const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
+        const initial = fullName.charAt(0).toUpperCase();
+        
+        // --- CHANGES START HERE ---
+        // 1. Added onclick to the main div
+        // 2. Added 'cursor-pointer' and 'group' classes
+        // 3. Added event.stopPropagation() to the button
+        container.innerHTML += `
+          <div onclick="openUserProfile('${doc.id}')" class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 hover-card transition text-center cursor-pointer relative group">
+            
+            <div class="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center bg-brand text-white text-2xl font-bold group-hover:scale-110 transition-transform">
+              ${initial || "U"}
+            </div>
+            
+            <h3 class="font-bold text-lg text-gray-900 dark:text-white group-hover:text-brand transition-colors">${fullName || "Unnamed User"}</h3>
+            <p class="text-xs text-gray-500 mt-1">${user.university || "University not specified"}</p>
+            <p class="text-sm text-gray-500 mt-2 mb-4">${user.role || "Student"}</p>
+            
+            <button onclick="event.stopPropagation(); openDM('${fullName}')" class="w-full bg-brand text-white py-2 rounded-lg text-sm font-bold hover:bg-brandDark transition shadow-md">Connect</button>
+          </div>
+        `;
+        // --- CHANGES END HERE ---
+      });
+    }).catch(err => {
+      console.error(err);
+      container.innerHTML = `<p class="text-red-500 text-center col-span-full">Failed to load users.</p>`;
+    });
+}
 
         const username = dynamicUsername || "google";
         function extractGitHubUsername(input) {
