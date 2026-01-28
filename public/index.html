@@ -460,6 +460,17 @@ if (savedTheme === 'dark') {
               authSection.innerHTML = "";
 
               if (user) {
+                const userDoc = await db.collection("users").doc(user.uid).get();
+if (!userDoc.exists) return;
+
+const userData = userDoc.data();
+
+// 🔥 ADMIN AUTO REDIRECT
+if (userData.isAdmin === true && !location.pathname.includes("admin.html")) {
+  window.location.href = "admin.html";
+  return;
+}
+
                 const doc = await db.collection("users").doc(user.uid).get();
                 if (!doc.exists) return;
 
@@ -514,7 +525,7 @@ if (savedTheme === 'dark') {
                   <button onclick="location.href='signup.html'" class="text-sm font-semibold text-brand border border-brand px-4 py-1.5 rounded-full">Sign up</button>
                 `;
                 logoutBtn.classList.add("hidden");
-              }
+              } 
             });
 
             function toggleLike(postId) {

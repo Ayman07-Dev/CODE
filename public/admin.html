@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>SkillXchange | Admin Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</head>
+
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+
+<header class="p-6 border-b border-gray-700 flex justify-between items-center">
+  <h1 class="text-2xl font-bold text-indigo-400">Admin Dashboard</h1>
+  <button onclick="logout()" class="bg-red-600 px-4 py-2 rounded-lg font-bold">Logout</button>
+</header>
+
+<main class="p-8 space-y-12">
+
+  <!-- USERS -->
+  <section>
+    <h2 class="text-xl font-bold mb-4">All Users</h2>
+    <div id="users" class="grid md:grid-cols-3 gap-4"></div>
+  </section>
+
+  <!-- POSTS -->
+  <section>
+    <h2 class="text-xl font-bold mb-4">All Posts</h2>
+    <div id="posts" class="space-y-3"></div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section>
+    <h2 class="text-xl font-bold mb-4">All Projects</h2>
+    <div id="projects" class="grid md:grid-cols-2 gap-4"></div>
+  </section>
+
+</main>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCLafxMmbSanvmgP9KPvWXO7968BgkSMAQ",
+  authDomain: "skillxchange-93fac.firebaseapp.com",
+  projectId: "skillxchange-93fac"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+/* 🔐 PROTECT ADMIN PAGE */
+auth.onAuthStateChanged(async user => {
+  if (!user) {
+    location.href = "login.html";
+    return;
+  }
+  const doc = await db.collection("users").doc(user.uid).get();
+  if (!doc.exists || doc.data().isAdmin !== true) {
+    alert("Access denied");
+    location.href = "home.html";
+  }
+});
+
+/* USERS */
+db.collection("users").onSnapshot(snap => {
+  const box = document.getElementById("users");
+  box.innerHTML = "";
+  snap.forEach(doc => {
+    const u = doc.data();
+    box.innerHTML += `
+      <div class="bg-gray-800 p-4 rounded-xl">
+        <p class="font-bold">${u.firstName || ""} ${u.lastName || ""}</p>
+        <p class="text-xs text-gray-400">${u.email || ""}</p>
+        <button onclick="deleteUser('${doc.id}')" class="mt-2 bg-red-600 w-full py-1 rounded">Delete</button>
+      </div>
+    `;
+  });
+});
+
+/* POSTS */
+db.collection("questions").onSnapshot(snap => {
+  const box = document.getElementById("posts");
+  box.innerHTML = "";
+  snap.forEach(doc => {
+    box.innerHTML += `
+      <div class="bg-gray-800 p-4 rounded-lg flex justify-between">
+        <span>${doc.data().title}</span>
+        <button onclick="deletePost('${doc.id}')" class="text-red-400">Delete</button>
+      </div>
+    `;
+  });
+});
+
+/* PROJECTS */
+db.collection("projects").onSnapshot(snap => {
+  const box = document.getElementById("projects");
+  box.innerHTML = "";
+  snap.forEach(doc => {
+    box.innerHTML += `
+      <div class="bg-gray-800 p-4 rounded-lg">
+        <h3 class="font-bold">${doc.data().title}</h3>
+        <button onclick="deleteProject('${doc.id}')" class="mt-2 bg-red-600 px-3 py-1 rounded">Delete</button>
+      </div>
+    `;
+  });
+});
+
+/* DELETE FUNCTIONS */
+function deletePost(id) {
+  if (confirm("Delete post?")) db.collection("questions").doc(id).delete();
+}
+function deleteProject(id) {
+  if (confirm("Delete project?")) db.collection("projects").doc(id).delete();
+}
+function deleteUser(id) {
+  if (confirm("Delete user data?")) db.collection("users").doc(id).delete();
+}
+function logout() {
+  auth.signOut().then(() => location.href = "login.html");
+}
+</script>
+
+</body>
+</html>
