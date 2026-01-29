@@ -75,7 +75,7 @@
                     <i class="fas fa-layer-group w-6 text-center mr-2"></i> Projects
                 </div>
                 <div onclick="switchPage('seniors', this)" class="sidebar-link flex items-center px-3 py-2.5 cursor-pointer text-sm text-gray-600 dark:text-gray-300">
-                    <i class="fas fa-graduation-cap w-6 text-center mr-2"></i> Senior Talks
+                    <i class="fas fa-graduation-cap w-6 text-center mr-2"></i> Community Members
                 </div>
             </nav>
 
@@ -259,8 +259,8 @@
               <div class="max-w-6xl mx-auto">
                 <div class="flex justify-between items-end mb-8">
                   <div>
-                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Senior Mentors</h1>
-                    <p class="text-gray-500 dark:text-gray-400">Get career guidance from final year students.</p>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Community Members</h1>
+                    <p class="text-gray-500 dark:text-gray-400">Explore ideas from community members.</p>
                   </div>
                 </div>
                 <div id="seniors-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -348,6 +348,11 @@
     </div>
 
     <script>
+      function goToAdmin() {
+  sessionStorage.setItem("skipAdminRedirect", "true");
+  window.location.href = "admin.html";
+}
+
         // --- THEME TOGGLER LOGIC ---
         function toggleTheme() {
             const html = document.documentElement;
@@ -493,28 +498,51 @@ sessionStorage.removeItem("skipAdminRedirect");
                 if (uniEl) uniEl.innerText = data.university || "University not set";
                 if (emailEl) emailEl.innerText = user.email || "Email not available";
 
-                authSection.innerHTML = `
-              <div class="relative">
-                <button onclick="toggleProfileMenu(event)" class="flex items-center space-x-3 hover:bg-gray-50 dark:hover:bg-gray-700 px-3 py-1.5 rounded-lg transition">
-                  <div class="text-right hidden md:block">
-                    <p class="text-sm font-bold text-gray-700 dark:text-gray-200">${fullName}</p>
-                  </div>
-                  <div class="w-9 h-9 rounded-full bg-brand text-white flex items-center justify-center font-bold">
-                    ${initial}
-                  </div>
-                </button>
-                <div id="profile-menu" class="hidden absolute right-0 mt-2 w-44 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-lg z-50">
-                  <button onclick="window.location.href='profile.html'" class="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white">
-                    <i class="fas fa-user text-gray-600 dark:text-gray-400"></i>
-                    <span>Profile</span>
-                  </button>
-                  <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <i class="fas fa-right-from-bracket"></i>
-                    <span>Sign Out</span>
-                  </button>
-                </div>
-              </div>
-            `;
+               const isAdmin = userData.isAdmin === true;
+
+authSection.innerHTML = `
+  <div class="relative">
+    <button onclick="toggleProfileMenu(event)" class="flex items-center space-x-3 hover:bg-gray-50 dark:hover:bg-gray-700 px-3 py-1.5 rounded-lg transition">
+      <div class="text-right hidden md:block">
+        <p class="text-sm font-bold text-gray-700 dark:text-gray-200">${fullName}</p>
+      </div>
+      <div class="w-9 h-9 rounded-full bg-brand text-white flex items-center justify-center font-bold">
+        ${initial}
+      </div>
+    </button>
+
+    <div id="profile-menu"
+         class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-lg z-50">
+
+      <button onclick="window.location.href='profile.html'"
+              class="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">
+        <i class="fas fa-user text-gray-500"></i>
+        <span>Profile</span>
+      </button>
+
+      ${
+        isAdmin
+          ? `
+        <button onclick="goToAdmin()"
+                class="w-full flex items-center gap-3 px-4 py-2 text-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-gray-700 font-semibold">
+          <i class="fas fa-shield-alt"></i>
+          <span>Admin Dashboard</span>
+        </button>
+        `
+          : ``
+      }
+
+      <hr class="border-gray-200 dark:border-gray-700 my-1">
+
+      <button onclick="logout()"
+              class="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+        <i class="fas fa-right-from-bracket"></i>
+        <span>Sign Out</span>
+      </button>
+    </div>
+  </div>
+`;
+
                 logoutBtn.classList.remove("hidden");
                 loadGitHubRepos(data.githubLink);
                 loadSavedDMs();
@@ -864,7 +892,7 @@ sessionStorage.removeItem("skipAdminRedirect");
             projects: 'Projects',
             'my-projects': 'My Projects',
             'my-posts': 'My Posts',
-            seniors: 'Senior Mentors',
+            seniors: 'community',
             chat: 'Messages'
           };
           document.getElementById('header-title').innerText = titles[pageId];
