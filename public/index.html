@@ -575,7 +575,7 @@ function postHackRoom() {
             firebase.initializeApp(firebaseConfig);
             db = firebase.firestore();
             loadProjects();
-
+            loadHackRooms();
             const auth = firebase.auth();
 
             auth.onAuthStateChanged(async (user) => {
@@ -1056,21 +1056,32 @@ function loadHackRooms() {
         }
 
         function switchPage(pageId, btnElement) {
-          document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active-page'));
-          document.getElementById(pageId).classList.add('active-page');
-          document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active'));
-          if (btnElement) btnElement.classList.add('active');
-          if (pageId === "seniors") loadSeniorProfiles();
-          const titles = {
-            explore: 'Explore Feed',
-            projects: 'Projects',
-            'my-projects': 'My Projects',
-            'my-posts': 'My Posts',
-            seniors: 'Community',
-            chat: 'Messages'
-          };
-          document.getElementById('header-title').innerText = titles[pageId];
-        }
+  document.querySelectorAll('.page-section')
+    .forEach(el => el.classList.remove('active-page'));
+
+  document.getElementById(pageId).classList.add('active-page');
+
+  document.querySelectorAll('.sidebar-link')
+    .forEach(el => el.classList.remove('active'));
+
+  if (btnElement) btnElement.classList.add('active');
+
+  if (pageId === "seniors") loadSeniorProfiles();
+  if (pageId === "hackrooms") loadHackRooms(); // 🔥 ADD THIS
+
+  const titles = {
+    explore: 'Explore Feed',
+    projects: 'Projects',
+    'my-projects': 'My Projects',
+    'my-posts': 'My Posts',
+    seniors: 'Community',
+    hackrooms: 'HackRooms', // 🔥 ADD
+    chat: 'Messages'
+  };
+
+  document.getElementById('header-title').innerText = titles[pageId] || '';
+}
+
 
         function updateUserUI(name) {
           const initial = name.charAt(0).toUpperCase();
